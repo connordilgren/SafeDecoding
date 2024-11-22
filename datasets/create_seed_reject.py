@@ -1,7 +1,9 @@
 import csv
 from collections import defaultdict
+import json
 
-prompts = []
+
+prompts_list = []
 prompts_set = set()
 
 with open('our_ft_dataset.csv', 'r') as f:
@@ -11,12 +13,12 @@ with open('our_ft_dataset.csv', 'r') as f:
     for row in reader:
         prompt = row[0]
         category = row[1]
-        
+
         if prompt not in prompts_set:
             prompts_set.add(prompt)
             id += 1
 
-            prompts.append({
+            prompts_list.append({
                 "id": id,
                 "prompt": prompt,
                 "category": row[1]
@@ -45,12 +47,33 @@ categories = [
     "Child Abuse"
 ]
 
-count_dict = defaultdict(int())
+count_dict = defaultdict(int)
+cat_dict = {}
 
-for prompt_dict in prompts:
+for prompt_dict in prompts_list:
     count_dict[prompt_dict["category"]] += 1
+
+    if prompt_dict["category"] in cat_dict:
+        cat_dict[prompt_dict["category"]].append(prompt_dict["prompt"])
+    else:
+        cat_dict[prompt_dict["category"]] = [prompt_dict["prompt"]]
 
 for category, count in count_dict.items():
     if count != 4:
         print(f"{category} has {count} prompts")
 print('done')
+
+for category, prompts in cat_dict.items():
+    print(f"{category}")
+    for i, prompt in enumerate(prompts):
+        print(f"{i+1}. {prompt}")
+
+with open('datasets\\seed_reject.json', 'w') as f:
+    json.dump(prompts_list, f, indent=4)
+
+
+with open('ft_dataset.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    for prompt_dict in prompts_list:
+        row = [prompt_dict['prompt'], prompt_dict['category']]
+        writer.writerow(row)
