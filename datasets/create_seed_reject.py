@@ -6,7 +6,7 @@ import json
 prompts_list = []
 prompts_set = set()
 
-with open('our_ft_dataset.csv', 'r') as f:
+with open('datasets//our_ft_dataset.csv', 'r') as f:
     reader = csv.reader(f)
     next(reader)
     id = 0
@@ -19,7 +19,7 @@ with open('our_ft_dataset.csv', 'r') as f:
             id += 1
 
             prompts_list.append({
-                "id": id,
+                "id": str(id),
                 "prompt": prompt,
                 "category": row[1]
             })
@@ -68,11 +68,11 @@ for category, prompts in cat_dict.items():
     for i, prompt in enumerate(prompts):
         print(f"{i+1}. {prompt}")
 
-with open('datasets\\seed_reject.json', 'w') as f:
-    json.dump(prompts_list, f, indent=4)
+with open('datasets//seed_reject.json', 'w') as f:
+    json.dump({"prompts": prompts_list}, f, indent=4)
 
 
-with open('ft_dataset.csv', 'w', newline='', encoding='utf-8') as f:
+with open('datasets//ft_dataset.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     for prompt_dict in prompts_list:
         row = [prompt_dict['prompt'], prompt_dict['category']]
