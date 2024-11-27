@@ -230,7 +230,7 @@ else:
 # Start generation
 for prompt in tqdm(attack_prompts):
     logging.info("--------------------------------------------")
-    if args.attacker == "naive":
+    if args.attacker in ["GCG", "AutoDAN", "PAIR", "DeepInception", "AdvBench"]: # == "naive": comment this out
         user_prompt = prompt["goal"]
     elif args.attacker == "Just-Eval":
         user_prompt = prompt["instruction"]

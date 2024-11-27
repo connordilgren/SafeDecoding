@@ -1,0 +1,26 @@
+/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/huggingface_hub/file_download.py:797: FutureWarning: `resume_download` is deprecated and will be removed in version 1.0.0. Downloads always resume when possible. If you want to force a new download, use `force_download=True`.
+  warnings.warn(
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/transformers/modeling_utils.py:442: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(checkpoint_file, map_location="cpu")
+Loading checkpoint shards:  50%|█████     | 1/2 [00:02<00:02,  2.98s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:03<00:00,  1.78s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:03<00:00,  1.96s/it]
+Traceback (most recent call last):
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/exp/defense.py", line 100, in <module>
+    model, tokenizer = load_model_and_tokenizer(model_name,
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/utils/opt_utils.py", line 18, in load_model_and_tokenizer
+    ).to(device).eval()
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/transformers/modeling_utils.py", line 1896, in to
+    return super().to(*args, **kwargs)
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1340, in to
+    return self._apply(convert)
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 900, in _apply
+    module._apply(fn)
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 900, in _apply
+    module._apply(fn)
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 900, in _apply
+    module._apply(fn)
+  [Previous line repeated 2 more times]
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 927, in _apply
+    param_applied = fn(param)
+  File "/fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1326, in convert
+    return t.to(
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 86.00 MiB. GPU 0 has a total capacity of 23.67 GiB of which 36.56 MiB is free. Process 699013 has 13.44 GiB memory in use. Including non-PyTorch memory, this process has 10.19 GiB memory in use. Of the allocated memory 9.98 GiB is allocated by PyTorch, and 17.60 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
