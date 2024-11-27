@@ -16,5 +16,5 @@ module load cuda
 source /fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/bin/activate
 
 python /fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/exp/defense.py --model_name llama2 --attacker AdvBench --defender SafeDecoding --disable_GPT_judge
-#--GPT_API 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
+#--GPT_API hiba to add her key
 #python my_script.py
