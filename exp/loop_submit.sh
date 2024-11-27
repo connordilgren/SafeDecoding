@@ -7,10 +7,11 @@
 #SBATCH --cpus-per-task=8                   # Number of CPU cores
 #SBATCH --mem=127G                           # Memory allocation (32 GB in this case)
 #SBATCH --time=20:00:00                     # Maximum time for job (30 hours)
-#SBATCH --output=safe_defense_test_%j.out   # Main output file
-#SBATCH --error=safe_defense_test_%j.err    # Main error file
+#SBATCH --output=/fs/class-projects/fall2024/cmsc723/c723g002/SafeDecodingRealAndUpToDate/output/sbatch/safe_defense_test_%j.out   # Main output file
+#SBATCH --error=/fs/class-projects/fall2024/cmsc723/c723g002/SafeDecodingRealAndUpToDate/output/sbatch/safe_defense_test_%j.err    # Main error file
+directory="/fs/class-projects/fall2024/cmsc723/c723g002/SafeDecodingRealAndUpToDate"
 module load cuda
-source /fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/.venv/bin/activate
+source "$directory/.venv/bin/activate"
 # Arrays of model names, attackers, and defenders
 models=("llama2" "vicuna") #("vicuna" "llama2")
 attackers=("AdvBench" "GCG" "AutoDAN" "PAIR" "DeepInception") #"your_customized_dataset")
@@ -27,7 +28,7 @@ for model in "${models[@]}"; do
       error_file="output/error_${model}_${attacker}_${defender}.err"
       
       # Launch the Python script as a background job, redirecting output and error
-      python /fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/exp/defense.py \
+      python "$directory/exp/defense.py" \
         --model_name "$model" \
         --attacker "$attacker" \
         --defender "$defender" \
@@ -38,11 +39,11 @@ for model in "${models[@]}"; do
         wait -n
       fi
     done
-      output_file="output/output_${model}_${attacker}_defense_off.out"
-      error_file="output/error_${model}_${attacker}_defense_off.err"
+      output_file="$directory/output/output_${model}_${attacker}_defense_off.out"
+      error_file="$directory/output/error_${model}_${attacker}_defense_off.err"
       
       # Launch the Python script as a background job, redirecting output and error
-      python /fs/classhomes/fall2024/cmsc723/c7230002/SafeDecoding/exp/defense.py \
+      python "$directory/exp/defense.py" \
         --model_name "$model" \
         --attacker "$attacker" \
         --defense_off \
@@ -60,7 +61,7 @@ wait
 for model in "${models[@]}"; do
   for attacker in "${attackers[@]}"; do
     for defender in "${defenders[@]}"; do
-      output_file="output/output_${model}_${attacker}_${defender}.out"
+      output_file="$directory/output/output_${model}_${attacker}_${defender}.out"
       
       if [[ -f "$output_file" ]]; then
         last_line=$(tail -n 1 "$output_file")  # Extract the last line of the output file # modify this to extract the last thing after ASR in the second to last line
