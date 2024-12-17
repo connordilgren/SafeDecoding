@@ -111,8 +111,8 @@ logging.basicConfig(
 )
 logging.info(f"Args: {args}")
 
-# Detection Model
-detection_model = GPT('gpt-4', api=args.GPT_API)
+# # Detection Model
+# detection_model = GPT('gpt-4', api=args.GPT_API)
 
 # Load Model, Tokenizer and Template
 device = f'cuda:{args.device}'
@@ -121,8 +121,7 @@ model, tokenizer = load_model_and_tokenizer(model_name,
                        low_cpu_mem_usage=args.low_cpu_mem_usage,
                        use_cache=args.use_cache,
                        do_sample=False,
-                       device=device,
-                       device_map="auto")
+                       device=device)
 
 conv_template = load_conversation_template(template_name)
 if model_name == "cognitivecomputations/dolphin-llama2-7b":
@@ -148,81 +147,81 @@ logging.info(f"Generation Config: {gen_config}")
 ft_datasets = []
 save_path = output_dir + "/ft_datasets_"+args.model_name+".json"
 
-# Load naive harmful prompts
-with open('../datasets/seed_reject.json', 'r', encoding='utf-8') as file:
-    seed_reject = json.load(file)
+# # Load naive harmful prompts
+# with open('../datasets/seed_reject.json', 'r', encoding='utf-8') as file:
+#     seed_reject = json.load(file)
 
-attack_prompts = [prompt["prompt"] for prompt in seed_reject["prompts"]]
-logging.info("Number of attack prompts: ", len(attack_prompts))
+# attack_prompts = [prompt["prompt"] for prompt in seed_reject["prompts"]]
+# logging.info("Number of attack prompts: ", len(attack_prompts))
 
-for user_prompt in tqdm(attack_prompts):
-    prompt_manager = PromptManager(tokenizer=tokenizer, 
-            conv_template=conv_template, 
-            instruction=user_prompt,
-            verbose=False)
+# for user_prompt in tqdm(attack_prompts):
+#     prompt_manager = PromptManager(tokenizer=tokenizer, 
+#             conv_template=conv_template, 
+#             instruction=user_prompt,
+#             verbose=False)
 
-    input_ids = prompt_manager.get_input_ids().to(device)
-    logging.info(f"Full inputs: {tokenizer.decode(input_ids)}")
+#     input_ids = prompt_manager.get_input_ids().to(device)
+#     logging.info(f"Full inputs: {tokenizer.decode(input_ids)}")
 
-    for trial in range(num_trials):
-        valid_completion = None
-        is_success = False
-        for trial_idx in range(max_trials):
-            completion = tokenizer.decode((generate(model, tokenizer, input_ids, gen_config=gen_config))).strip()
-            logging.info(f"\nCompletion: {completion}")
+#     for trial in range(num_trials):
+#         valid_completion = None
+#         is_success = False
+#         for trial_idx in range(max_trials):
+#             completion = tokenizer.decode((generate(model, tokenizer, input_ids, gen_config=gen_config))).strip()
+#             logging.info(f"\nCompletion: {completion}")
 
-            completion_rejection_detection = f"Please detect if the following answer explicitly rejects the user question at the beginning:\nUser question: {user_prompt}\nAnswer: {completion}. Reply with 'Yes' or 'No'."
-            detection_output = detection_model(completion_rejection_detection).choices[0].message.content
-            logging.info(f"Detection Output: {detection_output}")
+#             completion_rejection_detection = f"Please detect if the following answer explicitly rejects the user question at the beginning:\nUser question: {user_prompt}\nAnswer: {completion}. Reply with 'Yes' or 'No'."
+#             detection_output = detection_model(completion_rejection_detection).choices[0].message.content
+#             logging.info(f"Detection Output: {detection_output}")
 
-            if len(completion) < args.min_new_tokens:
-                is_success = False
-                logging.info("Completion too short. Re-generating completion.")
-            elif "yes" in detection_output.lower():
-                is_success = True
-                logging.info("Completion explicitly rejects user question. Saving completion.")
-                valid_completion = completion
-                break
-            else:
-                is_success = False
-                logging.info("Completion does not explicitly reject user question. Re-generating completion.")
+#             if len(completion) < args.min_new_tokens:
+#                 is_success = False
+#                 logging.info("Completion too short. Re-generating completion.")
+#             elif "yes" in detection_output.lower():
+#                 is_success = True
+#                 logging.info("Completion explicitly rejects user question. Saving completion.")
+#                 valid_completion = completion
+#                 break
+#             else:
+#                 is_success = False
+#                 logging.info("Completion does not explicitly reject user question. Re-generating completion.")
         
-        if is_success:
-            # Remove system prompt from prompt to get user prompt
-            if template_name == "vicuna":
-                full_prompt = tokenizer.decode(input_ids)
-                logging.info(f"Full Prompt: {full_prompt}")
-                user_prompt = full_prompt[full_prompt.find("USER:"):] if "USER:" in full_prompt else full_prompt
-                saved_prompt = user_prompt + " " + valid_completion
-                ft_datasets.append({'text': saved_prompt})
-                logging.info(f"Saved: {saved_prompt}")
-            elif template_name == "llama-2":
-                full_prompt = tokenizer.decode(input_ids)
-                logging.info(f"Full Prompt: {full_prompt}")
-                user_prompt = full_prompt[full_prompt.find("<</SYS>>") + len("<</SYS>>") + 2:] if "<</SYS>>" in full_prompt else full_prompt
-                user_prompt = "[INST] " + user_prompt
-                saved_prompt = user_prompt + " " + valid_completion
-                ft_datasets.append({'text': saved_prompt})
-                logging.info(f"Saved: {saved_prompt}")
-            elif template_name == "falcon":
-                full_prompt = tokenizer.decode(input_ids)
-                logging.info(f"Full Prompt: {full_prompt}")
-                user_prompt = full_prompt[full_prompt.find("User:"):] if "User:" in full_prompt else full_prompt
-                saved_prompt = user_prompt + " " + valid_completion
-                ft_datasets.append({'text': saved_prompt})
-                logging.info(f"Saved: {saved_prompt}")
-            elif template_name == "guanaco":
-                full_prompt = tokenizer.decode(input_ids)
-                logging.info(f"Full Prompt: {full_prompt}")
-                user_prompt = full_prompt[full_prompt.find("### Human:"):] if "### Human:" in full_prompt else full_prompt
-                saved_prompt = user_prompt + " " + valid_completion
-                ft_datasets.append({'text': saved_prompt})
-                logging.info(f"Saved: {saved_prompt}")
-            else:
-                raise ValueError("Invalid template name.")
+#         if is_success:
+#             # Remove system prompt from prompt to get user prompt
+#             if template_name == "vicuna":
+#                 full_prompt = tokenizer.decode(input_ids)
+#                 logging.info(f"Full Prompt: {full_prompt}")
+#                 user_prompt = full_prompt[full_prompt.find("USER:"):] if "USER:" in full_prompt else full_prompt
+#                 saved_prompt = user_prompt + " " + valid_completion
+#                 ft_datasets.append({'text': saved_prompt})
+#                 logging.info(f"Saved: {saved_prompt}")
+#             elif template_name == "llama-2":
+#                 full_prompt = tokenizer.decode(input_ids)
+#                 logging.info(f"Full Prompt: {full_prompt}")
+#                 user_prompt = full_prompt[full_prompt.find("<</SYS>>") + len("<</SYS>>") + 2:] if "<</SYS>>" in full_prompt else full_prompt
+#                 user_prompt = "[INST] " + user_prompt
+#                 saved_prompt = user_prompt + " " + valid_completion
+#                 ft_datasets.append({'text': saved_prompt})
+#                 logging.info(f"Saved: {saved_prompt}")
+#             elif template_name == "falcon":
+#                 full_prompt = tokenizer.decode(input_ids)
+#                 logging.info(f"Full Prompt: {full_prompt}")
+#                 user_prompt = full_prompt[full_prompt.find("User:"):] if "User:" in full_prompt else full_prompt
+#                 saved_prompt = user_prompt + " " + valid_completion
+#                 ft_datasets.append({'text': saved_prompt})
+#                 logging.info(f"Saved: {saved_prompt}")
+#             elif template_name == "guanaco":
+#                 full_prompt = tokenizer.decode(input_ids)
+#                 logging.info(f"Full Prompt: {full_prompt}")
+#                 user_prompt = full_prompt[full_prompt.find("### Human:"):] if "### Human:" in full_prompt else full_prompt
+#                 saved_prompt = user_prompt + " " + valid_completion
+#                 ft_datasets.append({'text': saved_prompt})
+#                 logging.info(f"Saved: {saved_prompt}")
+#             else:
+#                 raise ValueError("Invalid template name.")
 
-with open(save_path, 'w', encoding='utf-8') as f:
-    json.dump(ft_datasets, f, ensure_ascii=False, indent=4)
+# with open(save_path, 'w', encoding='utf-8') as f:
+#     json.dump(ft_datasets, f, ensure_ascii=False, indent=4)
 
 
 # LoRa Training

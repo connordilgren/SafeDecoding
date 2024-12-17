@@ -176,3 +176,8 @@ wandb
 # Exp outputs
 exp_outputs
 
+hf_cache
+
+output/
+
+tokens_and_keys(gitignored)

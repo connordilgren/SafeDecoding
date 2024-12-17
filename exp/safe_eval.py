@@ -134,14 +134,14 @@ def extract_content(tag, text):
 
 def single_resp(idx, prompt):
     model = model_utils.GPT('gpt-4-0613')
-    response = model(prompt)
+    response = model(prompt, debug=True)
     return idx, response
 
 class GPTJudge:
     def __init__(self, policy, mp=1, judge_model='gpt-4-0613', api=None):
         self.judger = judge_model
         self.mp = mp
-        self.api = api
+        self.api = "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"
         self.policy = self.policy_parse(policy)
     
     def policy_parse(self, policy_model):

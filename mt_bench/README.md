@@ -18,7 +18,7 @@ The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 #### Step 2. Generate GPT-4 judgments
 There are several options to use GPT-4 as a judge, such as pairwise winrate and single-answer grading.
 In MT-bench, we recommend single-answer grading as the default mode.
-This mode asks GPT-4 to grade and give a score to model's answer directly without pairwise comparison.
+This mode asks GPT-4 to grade and give a score to model's answer directly without pairwise 
 For each turn, GPT-4 will give a score on a scale of 10. We then compute the average score on all turns.
 
 Note that you need to **create a new environment** for generating judgments, as MT-bench only supports `openai==0.28.1` (sad)

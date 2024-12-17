@@ -1,1 +1,0 @@
-Model,Attacker,Defender,Last Line

@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import argparse
+import re
 from datasets import load_dataset, concatenate_datasets
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.string_utils import PromptManager, load_conversation_template
@@ -27,6 +28,9 @@ def get_args():
     parser.set_defaults(is_defense=True)
     parser.add_argument("--eval_mode_off", action="store_false", dest="eval_mode", help="Disable evaluation mode (Default: True)")
     parser.set_defaults(eval_mode=True)
+
+    parser.add_argument("--use_original", action="store_false", dest="use_original", help="Use original finetuned models.")
+    parser.set_defaults(use_original=False)
 
     # Defense Parameters
     parser.add_argument("--defender", type=str, default='SafeDecoding')
@@ -72,28 +76,32 @@ torch.manual_seed(args.seed)
 # If you are using CUDA (i.e., a GPU), also set the seed for it
 torch.cuda.manual_seed_all(args.seed)
 
-
+vicunaregex = r"^vicuna"
+llamaregex = r"^llama2"
+dolphinregex = r"^dolphin"
+falconregex = r"^falcon"
+guanacoregex = r"^guanaco"
 # Load model and template
-if args.model_name == "vicuna":
+if re.match(vicunaregex, args.model_name):
     model_name = "lmsys/vicuna-7b-v1.5"
     template_name = 'vicuna'
-elif args.model_name == "llama2":
+elif re.match(llamaregex, args.model_name):
     model_name = "meta-llama/Llama-2-7b-chat-hf"
     template_name = 'llama-2'
-elif args.model_name == "dolphin":
+elif re.match(dolphinregex, args.model_name):
     model_name = "cognitivecomputations/dolphin-llama2-7b" # From HF
     template_name = 'vicuna'
-elif args.model_name == "falcon":
+elif re.match(falconregex, args.model_name):
     model_name = "tiiuae/falcon-7b-instruct" # From HF
     template_name = 'falcon'
-elif args.model_name == "guanaco":
+elif re.match(guanacoregex, args.model_name):
     model_name = "timdettmers/guanaco-13b-merged" # From HF
     template_name = 'guanaco'
 else:
     raise ValueError("Invalid model name.")
 
 conv_template = load_conversation_template(template_name)
-if args.model_name == "dolphin":
+if re.match(dolphinregex, args.model_name):
     conv_template.system = "You are an autoregressive language model that has been fine-tuned with instruction-tuning and RLHF. You carefully provide accurate, factual, thoughtful, nuanced answers, and are brilliant at reasoning. If you think there might not be a correct answer, you say so. Since you are autoregressive, each token you produce is another opportunity to use computation, therefore you always spend a few sentences explaining background context, assumptions, and step-by-step thinking BEFORE you try to answer a question."
 
 device = f'cuda:{args.device}'
@@ -104,7 +112,12 @@ model, tokenizer = load_model_and_tokenizer(model_name,
                        do_sample=False,
                        device=device)
 
-model = PeftModel.from_pretrained(model, "../lora_modules/"+args.model_name, adapter_name="expert")
+if args.use_original:
+    lora_module_location = "../lora_modules/original_lora_modules/"
+else:
+    lora_module_location = "../lora_modules/"
+
+model = PeftModel.from_pretrained(model, lora_module_location+args.model_name, adapter_name="expert")
 adapter_names = ['base', 'expert']
 
 
@@ -134,13 +147,21 @@ elif args.attacker in ["GCG", "AutoDAN", "PAIR"]:
     attack_prompts = attack_prompts.filter(lambda x: x['source'] == args.attacker)
     if args.model_name in ["vicuna", "llama2", "guanaco"]:
         attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == args.model_name)
-    elif args.model_name == "dolphin": # Transfer attack prompts
+    elif re.match(guanacoregex, args.model_name):
+        attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "guanaco")
+    elif args.model_name in ["vicuna_1x", "vicuna_2x", "vicuna_4x", "vicuna_8x"]:
+        attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "vicuna")
+    elif args.model_name in ["llama2_1x", "llama2_2x", "llama2_4x", "llama2_8x"]:
         attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "llama2")
-    elif args.model_name == "falcon":
+    # elif args.model_name == "dolphin": # Transfer attack prompts
+    elif re.match(dolphinregex, args.model_name):
+        attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "llama2")
+    # elif args.model_name == "falcon":
+    elif re.match(falconregex, args.model_name):
         if args.attacker == "GCG":
             attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "llama2")
         else:
-            attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == args.model_name)
+            attack_prompts = attack_prompts.filter(lambda x: x['target-model'] == "falcon")
 elif args.attacker == "DeepInception":
     attack_prompts = load_dataset('flydust/SafeDecoding-Attackers', split="train")
     attack_prompts = attack_prompts.filter(lambda x: x['source'] == args.attacker)
@@ -409,6 +430,8 @@ if args.eval_mode:
         responses = [result['output'] for result in results]
 
         if not args.disable_GPT_judge:
+            #ANDERS, im removing multiprocessing so i can debug ` gpt_judge = GPTJudge('gpt',mp=args.multi_processing, api=args.GPT_API)`
+            
             gpt_judge = GPTJudge('gpt',mp=args.multi_processing, api=args.GPT_API)
             goals_responses_pairs = []
             for i in range(len(instructions)):

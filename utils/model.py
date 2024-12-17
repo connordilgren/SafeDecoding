@@ -7,6 +7,7 @@ import json
 
 class GPT:
     def __init__(self, model_name, api=None, temperature=0, seed=0):
+        print("IN INIT EY: ", api )
         self.model_name = model_name
         self.client = OpenAI(
             api_key=api
@@ -15,7 +16,7 @@ class GPT:
         self.seed=seed
         
 
-    def __call__(self, prompt,  n:int=1, debug=False, **kwargs: Any) -> Any:
+    def __call__(self, prompt,  n:int=1, debug=True, **kwargs: Any) -> Any:
         prompt = [{'role':'user', 'content':prompt}]
         if debug:
             return self.client.chat.completions.create(messages=prompt, n=n, model=self.model_name, temperature=self.T, seed=self.seed, **kwargs)
